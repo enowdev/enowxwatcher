@@ -1,4 +1,5 @@
-import { HardDrive, Activity, ArrowDown, ArrowUp, Clock, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { HardDrive, Activity, ArrowDown, ArrowUp, Clock, Trash2, ListTree } from "lucide-react";
 import type { Vps, VpsStatus } from "../../lib/api.ts";
 import { fmtRate, fmtUptime, memPct, diskPct } from "../../lib/format.ts";
 import { Card } from "../ui/card.tsx";
@@ -6,10 +7,12 @@ import { Badge } from "../ui/badge.tsx";
 import { StatusDot } from "./StatusDot.tsx";
 import { StatRing } from "./StatRing.tsx";
 import { Sparkline } from "./Sparkline.tsx";
+import { ProcessModal } from "./ProcessModal.tsx";
 
 export function VpsCard({ vps, status, onRemove }: { vps: Vps; status?: VpsStatus; onRemove: () => void }) {
   const online = status?.online ?? false;
   const dpct = status ? diskPct(status.disk_used_gb, status.disk_total_gb) : 0;
+  const [procOpen, setProcOpen] = useState(false);
 
   return (
     <Card className="group flex flex-col gap-3 p-4">
@@ -23,13 +26,25 @@ export function VpsCard({ vps, status, onRemove }: { vps: Vps; status?: VpsStatu
             </div>
           </div>
         </div>
-        <button
-          onClick={onRemove}
-          className="rounded p-1 text-muted-foreground opacity-0 transition hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
-          aria-label="Remove"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          {online && (
+            <button
+              onClick={() => setProcOpen(true)}
+              className="rounded p-1 text-muted-foreground opacity-0 transition hover:bg-accent hover:text-foreground group-hover:opacity-100"
+              aria-label="Processes"
+              title="View processes"
+            >
+              <ListTree className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            onClick={onRemove}
+            className="rounded p-1 text-muted-foreground opacity-0 transition hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
+            aria-label="Remove"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {!online ? (
@@ -75,6 +90,8 @@ export function VpsCard({ vps, status, onRemove }: { vps: Vps; status?: VpsStatu
           ))}
         </div>
       )}
+
+      <ProcessModal vps={vps} open={procOpen} onOpenChange={setProcOpen} />
     </Card>
   );
 }

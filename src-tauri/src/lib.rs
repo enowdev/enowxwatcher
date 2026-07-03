@@ -2,6 +2,7 @@
 mod commands;
 mod metrics;
 mod poller;
+mod process;
 mod ssh;
 mod store;
 mod webhook;
@@ -161,6 +162,8 @@ pub fn run() {
             commands::test_webhook,
             commands::get_settings,
             commands::set_settings,
+            commands::list_processes,
+            commands::kill_process,
         ])
         .run(tauri::generate_context!())
         .expect("error while running enowxwatcher");

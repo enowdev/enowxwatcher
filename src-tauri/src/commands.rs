@@ -109,6 +109,74 @@ pub async fn test_webhook(rule: WebhookRule) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Resolve a VPS's SSH auth (mirrors the poller) for one-off commands.
+fn auth_for(store: &Store, vps_id: &str) -> Result<(Vps, Auth), String> {
+    let vps = store
+        .vpses()
+        .into_iter()
+        .find(|v| v.id == vps_id)
+        .ok_or_else(|| "unknown vps".to_string())?;
+    let auth = match vps.auth {
+        AuthKind::Key => Auth::Key(crate::store::get_or_create_private_key().map_err(|e| e.to_string())?),
+        AuthKind::Password => {
+            Auth::Password(crate::store::get_vps_password(&vps.id).map_err(|e| e.to_string())?)
+        }
+    };
+    Ok((vps, auth))
+}
+
+/// List processes on a VPS (sorted by CPU). Requires an account that can run
+/// `ps` — the restricted monitor user cannot, so this returns an error there.
+#[tauri::command]
+pub async fn list_processes(
+    state: State<'_, AppState>,
+    vps_id: String,
+) -> Result<Vec<crate::process::Proc>, String> {
+    let (vps, auth) = auth_for(&state.store, &vps_id)?;
+    let out = ssh::run_command(
+        &vps.host,
+        vps.port,
+        &vps.user,
+        &auth,
+        crate::process::LIST_CMD,
+        std::time::Duration::from_secs(12),
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    let procs = crate::process::parse(&out);
+    if procs.is_empty() {
+        return Err("no processes returned (the account may be restricted to metrics only)".into());
+    }
+    Ok(procs)
+}
+
+/// Send TERM or KILL to a PID on a VPS.
+#[tauri::command]
+pub async fn kill_process(
+    state: State<'_, AppState>,
+    vps_id: String,
+    pid: u32,
+    signal: String,
+) -> Result<(), String> {
+    let (vps, auth) = auth_for(&state.store, &vps_id)?;
+    let out = ssh::run_command(
+        &vps.host,
+        vps.port,
+        &vps.user,
+        &auth,
+        &crate::process::kill_cmd(pid, &signal),
+        std::time::Duration::from_secs(10),
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    let trimmed = out.trim();
+    if trimmed.is_empty() {
+        Ok(())
+    } else {
+        Err(trimmed.to_string()) // e.g. "Operation not permitted"
+    }
+}
+
 #[tauri::command]
 pub fn get_settings(state: State<AppState>) -> crate::store::Settings {
     state.store.settings()

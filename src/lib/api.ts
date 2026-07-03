@@ -83,7 +83,18 @@ export const api = {
   testWebhook: (rule: WebhookRule) => invoke<void>("test_webhook", { rule }),
   getSettings: () => invoke<Settings>("get_settings"),
   setSettings: (settings: Settings) => invoke<void>("set_settings", { settings }),
+  listProcesses: (vpsId: string) => invoke<Proc[]>("list_processes", { vpsId }),
+  killProcess: (vpsId: string, pid: number, signal: "TERM" | "KILL") =>
+    invoke<void>("kill_process", { vpsId, pid, signal }),
 };
+
+export interface Proc {
+  pid: number;
+  user: string;
+  cpu: number;
+  mem: number;
+  command: string;
+}
 
 // --- Events ---
 
