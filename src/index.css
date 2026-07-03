@@ -82,7 +82,22 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+}
+
+/* Disable text selection app-wide (native-app feel). WebKit — the macOS webview
+   engine — needs the -webkit- prefix, which is why the unprefixed rule alone
+   didn't take. Inputs/textareas stay selectable so typing/editing works. */
+* {
+  -webkit-user-select: none;
   user-select: none;
+  cursor: default;
+}
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
 }
 
 /* The tray popover has a transparent window; keep its body transparent. */

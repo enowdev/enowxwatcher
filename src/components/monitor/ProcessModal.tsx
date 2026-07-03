@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search, RefreshCw, Loader2, X, Skull, Ban } from "lucide-react";
 import { api, type Proc, type Vps } from "../../lib/api.ts";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog.tsx";
@@ -129,8 +130,8 @@ export function ProcessModal({
         <p className="mt-2 text-[11px] text-muted-foreground">Click a row for actions, or right-click for a menu.</p>
 
         <div className="mt-1 max-h-[52vh] overflow-y-auto rounded-md border border-border">
-          <table className="w-full table-fixed text-left text-xs">
-            <thead className="sticky top-0 bg-card text-muted-foreground">
+          <table className="w-full table-fixed select-none text-left text-xs">
+            <thead className="sticky top-0 text-muted-foreground" style={{ backgroundColor: "hsl(var(--card))" }}>
               <tr className="border-b border-border">
                 <th className="w-16 px-2 py-2 font-medium">PID</th>
                 <th className="w-14 px-2 py-2 text-right font-medium">CPU</th>
@@ -174,11 +175,19 @@ export function ProcessModal({
           <p className="mt-2 text-[11px] text-muted-foreground">{filtered.length} processes · sorted by CPU</p>
         )}
 
-        {/* Right-click context menu */}
-        {menu && (
+      </DialogContent>
+
+      {/* Context menu — portaled to <body> so `fixed` uses true viewport
+          coordinates (inside the transformed dialog it would be offset). */}
+      {menu &&
+        createPortal(
           <div
-            className="fixed z-[200] min-w-[160px] overflow-hidden rounded-md border border-border bg-card p-1 shadow-xl"
-            style={{ left: menu.x, top: menu.y }}
+            className="fixed z-[200] min-w-[168px] overflow-hidden rounded-md border border-border p-1 shadow-2xl"
+            style={{
+              left: Math.min(menu.x, window.innerWidth - 180),
+              top: Math.min(menu.y, window.innerHeight - 100),
+              backgroundColor: "hsl(var(--card))",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="truncate px-2 py-1 text-[11px] text-muted-foreground">
@@ -196,9 +205,9 @@ export function ProcessModal({
             >
               <Skull className="h-3.5 w-3.5" /> Force kill (SIGKILL)
             </button>
-          </div>
+          </div>,
+          document.body,
         )}
-      </DialogContent>
     </Dialog>
   );
 }
