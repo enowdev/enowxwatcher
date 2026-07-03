@@ -24,9 +24,7 @@ export default function AppView() {
     <div className="flex h-full bg-background">
       <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-card/40 p-3">
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-            e
-          </div>
+          <img src="/ew.png" alt="ew" className="h-7 w-7 object-contain" />
           <span className="text-sm font-semibold">enowxwatcher</span>
         </div>
         <div className="mb-3 px-2 text-[11px] text-muted-foreground">
